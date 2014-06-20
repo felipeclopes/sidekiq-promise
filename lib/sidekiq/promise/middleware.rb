@@ -22,7 +22,13 @@ module Sidekiq
 
       def publish_message redis_pool, message
         redis_pool.with do |redis|
-          redis.publish CHANNEL, message.to_json
+          begin
+            redis.publish CHANNEL, message.to_json
+          rescue
+            # Result may not be serializable
+            message[:result] = nil
+            redis.publish CHANNEL, message.to_json
+          end
         end
       end
     end
